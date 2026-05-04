@@ -88,6 +88,11 @@ export function bookingTableRow(b) {
     </td>
     <td onclick="window._ctrl.editBooking('${b.id}')" style="cursor:pointer">${payBadge(b.payStatus)}</td>
     <td onclick="window._ctrl.editBooking('${b.id}')" style="cursor:pointer">${bookBadge(b.bookStatus)}</td>
-    <td><button class="btn btn-sm btn-danger" onclick="window._ctrl.deleteBooking('${b.id}')">✕</button></td>
+    <td>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        <button class="btn btn-sm" style="border-color:var(--accent);color:var(--accent)" onclick="window._ctrl.printInvoice('${b.id}')" title="Print invoice">Invoice</button>
+        <button class="btn btn-sm btn-danger" onclick="window._ctrl.deleteBooking('${b.id}')" title="Delete booking">✕</button>
+      </div>
+    </td>
   </tr>`;
 }

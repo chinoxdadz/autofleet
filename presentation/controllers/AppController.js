@@ -7,7 +7,7 @@
  * Exposed globally as window._ctrl so inline HTML handlers can reach it.
  */
 
-import { MONTHS, exportCsv, fmtDate, php } from '../../core/utils.js';
+import { MONTHS, exportCsv, fmtDate, php, escHtml } from '../../core/utils.js';
 import { ReportingService }     from '../../domain/services/ReportingService.js';
 import { AvailabilityService }  from '../../domain/services/AvailabilityService.js';
 
@@ -210,6 +210,139 @@ export class AppController {
         this._showToast('Booking deleted.');
       } catch (e) { this._showToast(e.message, true); }
     });
+  }
+
+  printInvoice(id) {
+    const booking = this.state.bookings.find(b => b.id === id);
+    if (!booking) {
+      this._showToast('Booking not found.', true);
+      return;
+    }
+
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) {
+      this._showToast('Please allow popups to print invoices.', true);
+      return;
+    }
+
+    const issuedOn = new Date().toLocaleDateString('en-PH', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    });
+    const pickupAt = new Date(booking.pickup).toLocaleString('en-PH', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    const returnAt = new Date(booking.ret).toLocaleString('en-PH', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    const otherFees = Number(booking.fees || 0);
+    const subtotal = Number(booking.subtotal || (Number(booking.rate || 0) * Number(booking.days || 0)));
+    const balance = Number(booking.total || 0) - Number(booking.paid || 0);
+    const invoiceNo = `AF-${String(booking.id).slice(-6).toUpperCase()}`;
+    const balanceLabel = balance > 0 ? 'Balance due' : balance < 0 ? 'Credit balance' : 'Balance due';
+    const notesRow = booking.notes
+      ? `<tr><th>Notes</th><td>${escHtml(booking.notes)}</td></tr>`
+      : '';
+    const driverRow = booking.serviceType === 'With driver' && booking.driver
+      ? `<tr><th>Driver</th><td>${escHtml(booking.driver)}</td></tr>`
+      : '';
+
+    w.document.write(`<!doctype html><html><head><title>Invoice ${escHtml(invoiceNo)}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:28px;color:#111;line-height:1.45;background:#fff}
+        .actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:18px}
+        .actions button{border:1px solid #d0d0d0;background:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+        .actions button.primary{background:#111;color:#fff;border-color:#111}
+        .head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}
+        .brand h1{margin:0;font-size:28px}.brand p{margin:2px 0;color:#555}
+        .meta{text-align:right}.meta strong{display:block;font-size:22px;margin-bottom:4px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+        .card{border:1px solid #ddd;border-radius:10px;padding:14px 16px}
+        .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#666;margin:0 0 8px}
+        table{width:100%;border-collapse:collapse;margin-top:14px}
+        th,td{border:1px solid #ddd;padding:9px 10px;font-size:13px;text-align:left;vertical-align:top}
+        th{background:#f7f7f7;width:32%}.right{text-align:right}
+        .total-row th,.total-row td{font-weight:bold;background:#f5f5f5}
+        .balance-row th,.balance-row td{font-weight:bold;background:#eef7f4}
+        .status{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef7f4;color:#0f6e56;font-size:12px;font-weight:700}
+        .muted{color:#666}.foot{margin-top:18px;font-size:12px;color:#666}
+        .notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+        .panel{border:1px solid #ddd;border-radius:10px;padding:14px 16px;background:#fafafa}
+        .panel h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#666}
+        .panel p{margin:0 0 6px;font-size:12px;color:#444}
+        @media print{.actions{display:none}body{padding:0}}
+      </style>
+      </head><body>
+      <div class="actions">
+        <button class="primary" onclick="window.print()">Print Invoice</button>
+        <button onclick="window.close()">Close</button>
+      </div>
+      <div class="head">
+        <div class="brand">
+          <h1>AutoFleet</h1>
+          <p>Customer Invoice</p>
+          <p class="muted">Car Rental Manager</p>
+        </div>
+        <div class="meta">
+          <strong>Invoice</strong>
+          <div>${escHtml(invoiceNo)}</div>
+          <div>Issued: ${escHtml(issuedOn)}</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Billed To</h2>
+          <div><strong>${escHtml(booking.customer)}</strong></div>
+          <div>${escHtml(booking.contact || 'No contact provided')}</div>
+          <div>${escHtml(booking.license || 'No license recorded')}</div>
+        </div>
+        <div class="card">
+          <h2>Booking Summary</h2>
+          <div><strong>${escHtml(booking.car)}</strong> (${escHtml(booking.plate || 'No plate')})</div>
+          <div>${escHtml(booking.serviceType || 'Self-drive')}</div>
+          <div><span class="status">${escHtml(booking.bookStatus || 'Active')}</span></div>
+        </div>
+      </div>
+
+      <table><tbody>
+        <tr><th>Pickup</th><td>${escHtml(pickupAt)}</td></tr>
+        <tr><th>Return</th><td>${escHtml(returnAt)}</td></tr>
+        <tr><th>Rental Days</th><td>${escHtml(String(booking.days || 0))}</td></tr>
+        <tr><th>Daily Rate</th><td>${escHtml(php(booking.rate || 0))}</td></tr>
+        ${driverRow}
+        ${notesRow}
+      </tbody></table>
+
+      <table>
+        <thead><tr><th>Description</th><th class="right">Amount</th></tr></thead>
+        <tbody>
+          <tr><td>Vehicle rental (${escHtml(String(booking.days || 0))} day(s) x ${escHtml(php(booking.rate || 0))})</td><td class="right">${escHtml(php(subtotal))}</td></tr>
+          <tr><td>Other fees</td><td class="right">${escHtml(php(otherFees))}</td></tr>
+          <tr class="total-row"><td>Total amount</td><td class="right">${escHtml(php(booking.total || 0))}</td></tr>
+          <tr><td>Amount paid</td><td class="right">${escHtml(php(booking.paid || 0))}</td></tr>
+          <tr class="balance-row"><td>${escHtml(balanceLabel)}</td><td class="right">${escHtml(php(Math.abs(balance)))}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="notes-grid">
+        <div class="panel">
+          <h3>Payment Instructions</h3>
+          <p>Please reference invoice no. <strong>${escHtml(invoiceNo)}</strong> when settling this booking.</p>
+          <p>For any payment confirmation or invoice concern, contact AutoFleet directly before the rental start date.</p>
+          <p>Outstanding balances should be cleared on or before vehicle release unless otherwise agreed.</p>
+        </div>
+        <div class="panel">
+          <h3>Customer Notes</h3>
+          <p>Payment status: <strong>${escHtml(booking.payStatus || 'Unpaid')}</strong></p>
+          <p>Service type: <strong>${escHtml(booking.serviceType || 'Self-drive')}</strong></p>
+          <p>Thank you for choosing AutoFleet.</p>
+        </div>
+      </div>
+
+      <div class="foot">Generated on ${escHtml(issuedOn)} for booking ${escHtml(String(booking.id))}.</div>
+      </body></html>`);
+    w.document.close();
+    w.focus();
   }
 
   // ── Fleet ─────────────────────────────────────────────────────────────────
