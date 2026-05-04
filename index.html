@@ -38,16 +38,62 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 /* ── Mobile sidebar overlay ── */
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:19}
 @media(max-width:768px){
+  /* ── Sidebar ── */
   .sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.open{display:block}
   .main{width:100%}
+  .menu-toggle{display:flex!important}
+
+  /* ── Topbar ── */
+  .topbar{flex-wrap:wrap;padding:10px 14px;gap:8px}
+  .topbar-left{width:100%}
+  .topbar-actions{flex-wrap:wrap;width:100%;gap:6px}
+  .topbar-actions .search-input{flex:1 1 140px;width:auto!important}
+  .topbar-actions select.btn{flex:1 1 auto;min-width:0}
+  .topbar-actions .btn-primary{flex:1 1 100%}
+
+  /* ── Content ── */
+  .content{padding:12px}
+
+  /* ── Stat / summary grids ── */
   .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .summary-bar{flex-wrap:wrap}
+  .summary-stat{flex:1 1 50%;border-bottom:1px solid var(--border)}
+
+  /* ── Card grids ── */
   .fleet-grid{grid-template-columns:1fr!important}
   .cust-grid{grid-template-columns:1fr!important}
   .charts-2col{grid-template-columns:1fr!important}
-  .menu-toggle{display:flex!important}
-  .content{padding:16px}
+
+  /* ── Forms inside modals ── */
+  .form-grid{grid-template-columns:1fr!important}
+  .form-group.span2{grid-column:span 1!important}
+  .form-divider{grid-column:span 1!important}
+
+  /* ── Availability ── */
+  .avail-header{flex-wrap:wrap;gap:8px;padding:12px 14px}
+  .avail-scroll{padding:14px 0}
+  .avail-stats{grid-template-columns:1fr 1fr}
+
+  /* ── Modals ── */
+  .modal{max-width:100vw;width:100%;border-bottom-left-radius:0;border-bottom-right-radius:0;margin-top:auto}
+  .modal-overlay{align-items:flex-end}
+  .modal-header{padding:14px 16px}
+  .modal-body{padding:14px 16px}
+  .modal-footer{padding:12px 16px;flex-wrap:wrap;gap:8px}
+  .modal-footer .btn{flex:1 1 auto}
+
+  /* ── Tables ── */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  th,td{padding:8px 10px}
+
+  /* ── Toast ── */
+  .toast{bottom:12px;right:12px;left:12px;max-width:none}
+
+  /* ── Section card padding ── */
+  .section-body{padding:12px 14px}
+  .section-header{padding:11px 14px}
 }
 
 /* ── Main ── */
@@ -250,7 +296,7 @@ textarea{resize:vertical;min-height:70px}
 .confirm-btns{display:flex;gap:8px;justify-content:flex-end}
 
 /* ── Search input ── */
-.search-input{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 11px 6px 30px;outline:none;transition:border-color var(--transition);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='none' stroke='%238b90a8' stroke-width='2'%3E%3Ccircle cx='5.5' cy='5.5' r='4'/%3E%3Cpath d='M9 9l3 3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center}
+.search-input{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 11px 6px 30px;outline:none;transition:border-color var(--transition);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='none' stroke='%238b90a8' stroke-width='2'%3E%3Ccircle cx='5.5' cy='5.5' r='4'/%3E%3Cpath d='M9 9l3 3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;min-width:140px}
 .search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,202,165,.12)}
 
 /* ── Animations ── */
@@ -269,7 +315,6 @@ textarea{resize:vertical;min-height:70px}
 .summary-stat:last-child{border-right:none}
 .summary-stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;line-height:1}
 .summary-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
-@media(max-width:768px){.summary-bar{flex-wrap:wrap}.summary-stat{flex:1 1 50%;border-bottom:1px solid var(--border)}}
 
 /* ── Tier badges ── */
 .tier-new{background:rgba(139,144,168,.15);color:var(--muted)}
@@ -440,7 +485,7 @@ textarea{resize:vertical;min-height:70px}
         <span class="page-title">Booking Log</span>
       </div>
       <div class="topbar-actions">
-        <input type="text" class="search-input" id="book-search" placeholder="Search bookings…" style="width:180px" oninput="renderBookings()">
+        <input type="text" class="search-input" id="book-search" placeholder="Search bookings…" oninput="renderBookings()">
         <select class="btn" id="book-status-filter" onchange="renderBookings()">
           <option value="">All Statuses</option>
           <option value="Completed">Completed</option>
@@ -469,7 +514,7 @@ textarea{resize:vertical;min-height:70px}
         <span class="page-title">Fleet Management</span>
       </div>
       <div class="topbar-actions">
-        <input type="text" class="search-input" id="fleet-search" placeholder="Search cars…" style="width:160px" oninput="renderFleet()">
+        <input type="text" class="search-input" id="fleet-search" placeholder="Search cars…" oninput="renderFleet()">
         <select class="btn" id="fleet-sort-sel" onchange="renderFleet()">
           <option value="name-asc">Name A→Z</option>
           <option value="name-desc">Name Z→A</option>
@@ -595,7 +640,7 @@ textarea{resize:vertical;min-height:70px}
         <span class="page-title">Customer Database</span>
       </div>
       <div class="topbar-actions">
-        <input type="text" class="search-input" id="cust-search" placeholder="Search customers…" style="width:180px" oninput="renderCustomers()">
+        <input type="text" class="search-input" id="cust-search" placeholder="Search customers…" oninput="renderCustomers()">
         <select class="btn" id="cust-sort-sel" onchange="renderCustomers()">
           <option value="name-asc">Name A→Z</option>
           <option value="name-desc">Name Z→A</option>
