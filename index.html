@@ -350,7 +350,8 @@ textarea{resize:vertical;min-height:70px}
 <body>
 
 <!-- ── LOGIN OVERLAY ──────────────────────────────────────────────────── -->
-<div id="login-overlay">
+<!-- Shown immediately so the dashboard is never visible before auth check -->
+<div id="login-overlay" style="display:flex">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-logo-title">AutoFleet</div>

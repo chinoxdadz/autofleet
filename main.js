@@ -92,8 +92,11 @@ async function bootApp() {
 // Expose boot for the login success handler in index.html
 window._bootApp = bootApp;
 
-// If already authenticated, boot immediately
+// If already authenticated, boot immediately and then hide the login overlay
 if (isLoggedIn) {
   await bootApp();
+  const overlay = document.getElementById('login-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => { overlay.style.display = 'none'; }, 320);
 }
 
