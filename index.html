@@ -324,6 +324,14 @@ textarea{resize:vertical;min-height:70px}
 /* ── Utilization bar ── */
 .fleet-util-row{padding:8px 0 4px;border-top:1px solid rgba(42,47,69,.5)}
 
+/* ── Availability cell tooltip ── */
+#avail-tooltip{position:fixed;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text);pointer-events:none;opacity:0;transition:opacity .12s ease;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.4);line-height:1.5}
+#avail-tooltip.show{opacity:1}
+.avail-tip-name{font-weight:600;font-size:13px;margin-bottom:4px;color:var(--accent)}
+.avail-tip-row{display:flex;gap:6px;font-size:11px}
+.avail-tip-lbl{color:var(--muted);min-width:42px}
+.avail-tip-divider{border:none;border-top:1px solid var(--border);margin:6px 0}
+
 /* ── Dashboard: Today panel ── */
 .dash-today-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(42,47,69,.4)}
 .dash-today-item:last-child{border-bottom:none}
@@ -904,6 +912,8 @@ textarea{resize:vertical;min-height:70px}
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+<!-- Availability calendar tooltip -->
+<div id="avail-tooltip"></div>
 
 <!--
   ══════════════════════════════════════════════════════════
@@ -1069,6 +1079,45 @@ textarea{resize:vertical;min-height:70px}
     getEl('sidebar').classList.toggle('open');
     getEl('sidebar-overlay').classList.toggle('open');
   }
+
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  // ── Availability calendar tooltip ────────────────────────────────────────
+  (function () {
+    const tip = document.getElementById('avail-tooltip');
+    let hideTimer;
+
+    document.addEventListener('mouseover', e => {
+      const cell = e.target.closest('[data-tip]');
+      if (!cell) return;
+      clearTimeout(hideTimer);
+      tip.innerHTML = cell.dataset.tip;
+      tip.classList.add('show');
+      _positionTip(e);
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!tip.classList.contains('show')) return;
+      if (!e.target.closest('[data-tip]')) return;
+      _positionTip(e);
+    });
+
+    document.addEventListener('mouseout', e => {
+      if (!e.target.closest('[data-tip]')) return;
+      hideTimer = setTimeout(() => tip.classList.remove('show'), 80);
+    });
+
+    function _positionTip(e) {
+      const pad = 12;
+      const tw = tip.offsetWidth  || 220;
+      const th = tip.offsetHeight || 80;
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+      if (x + tw > window.innerWidth  - pad) x = e.clientX - tw - pad;
+      if (y + th > window.innerHeight - pad) y = e.clientY - th - pad;
+      tip.style.left = x + 'px';
+      tip.style.top  = y + 'px';
+    }
+  })();
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   document.addEventListener('keydown', e => {

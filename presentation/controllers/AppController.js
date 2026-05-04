@@ -272,7 +272,7 @@ export class AppController {
     );
     this._availR.render(
       document.getElementById('availability-content'),
-      { cars: this.state.cars, occupancy, doubleBooked, month: m, year: y }
+      { cars: this.state.cars, occupancy, doubleBooked, bookings: this.state.bookings, month: m, year: y }
     );
   }
 

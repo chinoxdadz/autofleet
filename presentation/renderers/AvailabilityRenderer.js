@@ -5,10 +5,25 @@
  * Shows occupancy grid with per-car statistics.
  */
 
-import { MONTHS, escHtml } from '../../core/utils.js';
+import { MONTHS, fmtDate, escHtml } from '../../core/utils.js';
 
 export class AvailabilityRenderer {
-  render(container, { cars, occupancy, doubleBooked, month, year }) {
+  render(container, { cars, occupancy, doubleBooked, bookings, month, year }) {
+    // Build carId-day → [booking, ...] lookup for tooltip data
+    this._bookingsByKey = new Map();
+    (bookings || []).forEach(b => {
+      if (b.bookStatus === 'Cancelled') return;
+      const car = cars.find(c => c.name === b.car);
+      if (!car) return;
+      const start = new Date(b.pickup);
+      const end   = new Date(b.ret);
+      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        if (d.getFullYear() !== year || d.getMonth() + 1 !== month) continue;
+        const key = `${car.id}-${d.getDate()}`;
+        if (!this._bookingsByKey.has(key)) this._bookingsByKey.set(key, []);
+        this._bookingsByKey.get(key).push(b);
+      }
+    });
     if (!cars.length) {
       container.innerHTML = `<div class="section-card"><div class="empty">
         <div class="empty-icon">🗓</div>
@@ -102,17 +117,30 @@ export class AvailabilityRenderer {
 
   _buildCalendarCell(carId, day, todayDay, occupancy, doubleBooked) {
     const isConflict = doubleBooked.has(`${carId}-${day}`);
-    const isBooked = occupancy.get(carId)?.has(day);
-    const isToday = day === todayDay;
+    const isBooked   = occupancy.get(carId)?.has(day);
+    const isToday    = day === todayDay;
     const stateClass = isConflict ? 'cal-double' : isBooked ? 'cal-booked' : '';
-    const todayClass = isToday ? 'cal-today' : '';
-    const title = isConflict
-      ? `Double booked on ${day}`
-      : isBooked
-        ? `Booked on ${day}`
-        : `Available on ${day}`;
+    const todayClass = isToday ? ' cal-today' : '';
 
-    return `<td><div class="cal-cell ${stateClass} ${todayClass}" title="${title}"></div></td>`;
+    if (!isBooked && !isConflict) {
+      return `<td><div class="cal-cell${todayClass}"></div></td>`;
+    }
+
+    // Build tooltip HTML (all user data escaped)
+    const bkList = this._bookingsByKey?.get(`${carId}-${day}`) || [];
+    const tipHtml = bkList.map(b => {
+      const pickup = new Date(b.pickup).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      const ret    = new Date(b.ret).toLocaleString('en-PH',    { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      return `<div class="avail-tip-entry">`
+        + `<div class="avail-tip-name">${escHtml(b.customer)}</div>`
+        + `<div class="avail-tip-row"><span class="avail-tip-lbl">Pickup</span>${escHtml(pickup)}</div>`
+        + `<div class="avail-tip-row"><span class="avail-tip-lbl">Return</span>${escHtml(ret)}</div>`
+        + `</div>`;
+    }).join('<hr class="avail-tip-divider">');
+
+    const dataTip = tipHtml ? tipHtml.replace(/"/g, '&quot;') : '';
+
+    return `<td><div class="cal-cell ${stateClass}${todayClass}" data-tip="${dataTip}"></div></td>`;
   }
 
   _buildStatsSection(carStats, daysInMonth) {
