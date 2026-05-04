@@ -88,49 +88,50 @@ export class FleetRenderer {
         : '';
       const photoHtml = c.photo?.dataUrl
         ? `<img class="fleet-photo-img" src="${escHtml(c.photo.dataUrl)}" alt="${escHtml(c.name)}">`
-        : `<div class="fleet-photo-empty">No Photo
-            <button class="btn btn-sm" style="margin-top:8px" onclick="window._ctrl.openCarModal('${c.id}')">Upload</button>
-          </div>`;
+        : `<div class="fleet-photo-empty">No Photo<button class="btn btn-sm" onclick="window._ctrl.openCarModal('${c.id}')">Upload</button></div>`;
 
       return `<div class="fleet-card">
         <div class="fleet-photo">${photoHtml}</div>
-        <div class="fleet-card-top">
-          <div style="flex:1;min-width:0">
-            <div class="fleet-car-name">${escHtml(c.name)}</div>
-            <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${statusBadge}${pendingExtra}</div>
+        <div class="fleet-card-body">
+          <div class="fleet-card-top">
+            <div style="flex:1;min-width:0">
+              <div class="fleet-car-name">${escHtml(c.name)}</div>
+              <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${statusBadge}${pendingExtra}</div>
+            </div>
+            <span class="plate-tag">${escHtml(c.plate)}</span>
           </div>
-          <span class="plate-tag">${escHtml(c.plate)}</span>
-        </div>
-        <div class="fleet-row"><span>Year</span><span class="fleet-val">${c.year || '—'}</span></div>
-        <div class="fleet-row"><span>Daily Rate</span><span class="fleet-val" style="color:var(--accent)">${c.rate ? php(c.rate) : '—'}</span></div>
-        <div class="fleet-row"><span>Mileage</span><span class="fleet-val">${c.mileage !== '' && c.mileage !== undefined ? Number(c.mileage).toLocaleString() + ' km' : '—'}</span></div>
-        <div class="fleet-row"><span>Reg. Expiry</span>
-          <span class="fleet-val" style="color:${regWarn ? 'var(--amber)' : 'var(--text)'}">
-            ${c.regExpiry ? fmtDate(c.regExpiry) : '—'}${regWarn ? ' ⚠' : ''}
-          </span>
-        </div>
-        <div class="fleet-row"><span>Ins. Expiry</span>
-          <span class="fleet-val" style="color:${insWarn ? 'var(--amber)' : 'var(--text)'}">
-            ${c.insExpiry ? fmtDate(c.insExpiry) : '—'}${insWarn ? ' ⚠' : ''}
-          </span>
-        </div>
-        <div class="fleet-row"><span>Next Inspection</span>
-          <span class="fleet-val" style="color:${inspWarn ? 'var(--red)' : 'var(--text)'}">
-            ${c.inspection ? fmtDate(c.inspection) : '—'}${inspWarn ? ' ⚠' : ''}
-          </span>
-        </div>
-        <div class="fleet-row"><span>Total Bookings</span><span class="fleet-val">${totalBkgs}</span></div>
-        <div class="fleet-row"><span>Total Revenue</span><span class="fleet-val" style="color:var(--green-light)">${php(totalRevCar)}</span></div>
-        <div class="fleet-util-row">
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
-            <span>Utilization ${year}</span><span style="color:var(--accent)">${utilPct}%</span>
+          <div class="fleet-card-meta">
+            <span class="fleet-card-rate">${c.rate ? php(c.rate) : '—'}<span style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--muted);margin-left:2px">/day</span></span>
+            <span style="font-size:11px;color:var(--muted)">${c.year || ''}</span>
           </div>
-          <div class="util-track"><div class="util-fill" style="width:${utilPct}%"></div></div>
-        </div>
-        ${c.notes ? `<div class="fleet-row"><span>Notes</span><span class="fleet-val" style="font-size:11px;text-align:right;max-width:160px">${escHtml(c.notes)}</span></div>` : ''}
-        <div class="fleet-actions">
-          <button class="btn btn-sm" style="flex:1" onclick="window._ctrl.openCarModal('${c.id}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="window._ctrl.deleteCar('${c.id}')">Delete</button>
+
+          <div class="fleet-details" id="fleet-details-${c.id}">
+            <div class="fleet-row"><span>Mileage</span><span class="fleet-val">${c.mileage !== '' && c.mileage !== undefined ? Number(c.mileage).toLocaleString() + ' km' : '—'}</span></div>
+            <div class="fleet-row"><span>Reg. Expiry</span>
+              <span class="fleet-val" style="color:${regWarn ? 'var(--amber)' : 'var(--text)'}">${c.regExpiry ? fmtDate(c.regExpiry) : '—'}${regWarn ? ' ⚠' : ''}</span>
+            </div>
+            <div class="fleet-row"><span>Ins. Expiry</span>
+              <span class="fleet-val" style="color:${insWarn ? 'var(--amber)' : 'var(--text)'}">${c.insExpiry ? fmtDate(c.insExpiry) : '—'}${insWarn ? ' ⚠' : ''}</span>
+            </div>
+            <div class="fleet-row"><span>Next Inspection</span>
+              <span class="fleet-val" style="color:${inspWarn ? 'var(--red)' : 'var(--text)'}">${c.inspection ? fmtDate(c.inspection) : '—'}${inspWarn ? ' ⚠' : ''}</span>
+            </div>
+            <div class="fleet-row"><span>Total Bookings</span><span class="fleet-val">${totalBkgs}</span></div>
+            <div class="fleet-row"><span>Total Revenue</span><span class="fleet-val" style="color:var(--green-light)">${php(totalRevCar)}</span></div>
+            <div class="fleet-util-row">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
+                <span>Utilization ${year}</span><span style="color:var(--accent)">${utilPct}%</span>
+              </div>
+              <div class="util-track"><div class="util-fill" style="width:${utilPct}%"></div></div>
+            </div>
+            ${c.notes ? `<div class="fleet-row"><span>Notes</span><span class="fleet-val" style="font-size:11px;text-align:right;max-width:160px">${escHtml(c.notes)}</span></div>` : ''}
+          </div>
+
+          <div class="fleet-actions">
+            <button class="btn btn-sm fleet-details-btn" onclick="toggleFleetDetails('${c.id}', this)">View Details ▾</button>
+            <button class="btn btn-sm" onclick="window._ctrl.openCarModal('${c.id}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="window._ctrl.deleteCar('${c.id}')">Delete</button>
+          </div>
         </div>
       </div>`;
     }).join('')}</div>`;

@@ -50,6 +50,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 /* ── Main ── */
 .main{flex:1;overflow-y:auto;background:var(--bg);position:relative;min-width:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:8px}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text);flex-shrink:0}
 .topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .content{padding:24px 28px}
@@ -119,17 +120,24 @@ tbody tr:hover td{background:rgba(93,202,165,.04)}
 
 /* ── Fleet grid ── */
 .fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.fleet-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color var(--transition),transform var(--transition)}
+/* ── Fleet card ── */
+.fleet-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color var(--transition),transform var(--transition)}
 .fleet-card:hover{border-color:var(--accent);transform:translateY(-1px)}
-.fleet-photo{height:140px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface);margin-bottom:12px;display:flex;align-items:center;justify-content:center}
+.fleet-photo{height:200px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative}
 .fleet-photo-img{width:100%;height:100%;object-fit:cover;display:block}
-.fleet-photo-empty{font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
-.fleet-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px}
-.fleet-car-name{font-weight:600;font-size:14px;line-height:1.3}
+.fleet-photo-empty{font-size:11px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:8px}
+.fleet-card-body{padding:14px 16px}
+.fleet-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.fleet-car-name{font-weight:600;font-size:15px;line-height:1.3}
+.fleet-card-meta{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.fleet-card-rate{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.5px;color:var(--accent)}
 .plate-tag{font-size:11px;color:var(--muted);font-family:monospace;background:var(--surface);padding:2px 7px;border-radius:4px;border:1px solid var(--border);white-space:nowrap}
 .fleet-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:5px 0;border-top:1px solid rgba(42,47,69,.5)}
 .fleet-val{color:var(--text)}
+.fleet-details{display:none;margin-top:12px;padding-top:4px;border-top:1px solid var(--border)}
+.fleet-details.open{display:block}
 .fleet-actions{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(42,47,69,.5)}
+.fleet-details-btn{flex:1;font-size:11px;color:var(--muted);text-align:center}
 
 /* ── Customer grid ── */
 .cust-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
@@ -174,6 +182,9 @@ tbody tr:hover td{background:rgba(93,202,165,.04)}
 .avail-stat-item{padding:12px 14px;background:var(--surface);border-left:3px solid var(--accent);border-radius:4px}
 .avail-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .avail-stat-value{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:.5px}
+.avail-stat-meta{font-size:10px;color:var(--muted);margin-top:4px}
+.avail-day-head{display:inline-block;min-width:20px}
+.avail-legend-tip{margin-left:auto;color:var(--accent)}
 
 /* ── Charts ── */
 .charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
@@ -309,7 +320,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="login-error" id="login-error"></div>
     <button class="login-btn" id="login-submit-btn" onclick="submitLogin()">Sign In</button>
     <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted)">
-      First time? <a href="#" style="color:var(--accent)" onclick="toggleSignUp(event)">Create account</a>
+      First time? <a href="#" id="login-toggle-link" style="color:var(--accent)" onclick="toggleSignUp(event)">Create account</a>
     </p>
   </div>
 </div>
@@ -340,6 +351,13 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <div class="app">
+
+<!-- Shared topbar menu-toggle button — cloned into every .topbar-left by JS -->
+<template id="menu-toggle-tpl">
+  <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
+  </button>
+</template>
 
 <!-- Mobile sidebar overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -401,10 +419,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- DASHBOARD -->
   <div id="screen-dashboard" class="screen active">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Dashboard</span>
       </div>
       <div class="topbar-actions">
@@ -418,10 +433,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- BOOKINGS -->
   <div id="screen-bookings" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Booking Log</span>
       </div>
       <div class="topbar-actions">
@@ -450,10 +462,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- FLEET -->
   <div id="screen-fleet" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Fleet Management</span>
       </div>
       <div class="topbar-actions">
@@ -475,10 +484,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- QUOTATION -->
   <div id="screen-quotation" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Quotation Maker</span>
       </div>
       <div class="topbar-actions">
@@ -541,10 +547,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- AVAILABILITY -->
   <div id="screen-availability" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Availability Calendar</span>
       </div>
       <div class="topbar-actions">
@@ -558,10 +561,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- MONTHLY -->
   <div id="screen-monthly" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Monthly Summary</span>
       </div>
       <div class="topbar-actions">
@@ -575,10 +575,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- ANNUAL -->
   <div id="screen-annual" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Annual Summary</span>
       </div>
       <div class="topbar-actions">
@@ -591,10 +588,7 @@ textarea{resize:vertical;min-height:70px}
   <!-- CUSTOMERS -->
   <div id="screen-customers" class="screen">
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx="1"/><rect x="1" y="7.25" width="14" height="1.5" rx="1"/><rect x="1" y="11.5" width="14" height="1.5" rx="1"/></svg>
-        </button>
+      <div class="topbar-left">
         <span class="page-title">Customer Database</span>
       </div>
       <div class="topbar-actions">
@@ -862,40 +856,50 @@ textarea{resize:vertical;min-height:70px}
 <script>
   // ── Global shims for inline HTML event handlers ──────────────────────────
   const c = () => window._ctrl;
+  const getEl = id => document.getElementById(id);
 
-  function showScreen(id, el)        { c().showScreen(id, el); }
-  function renderDashboard()         { c().renderDashboard(); }
-  function renderBookings()          { c().renderBookings(); }
-  function renderAvailability()      { c().renderAvailability(); }
-  function renderMonthly()           { c().renderMonthly(); }
-  function renderAnnual()            { c().renderAnnual(); }
-  function renderCustomers()         { c().renderCustomers(); }
-  function renderFleet()             { c().renderFleet(); }
-  function renderQuotation()         { c().renderQuotation(); }
+  // Expose controller methods to the global scope so inline onclick handlers can call them.
+  const SHIM_METHOD_MAP = {
+    showScreen: 'showScreen',
+    renderDashboard: 'renderDashboard',
+    renderBookings: 'renderBookings',
+    renderAvailability: 'renderAvailability',
+    renderMonthly: 'renderMonthly',
+    renderAnnual: 'renderAnnual',
+    renderCustomers: 'renderCustomers',
+    renderFleet: 'renderFleet',
+    renderQuotation: 'renderQuotation',
+    openBookingModal: 'openBookingModal',
+    saveBooking: 'saveBooking',
+    calcBooking: 'calcBooking',
+    autofillCustomer: 'autofillCustomer',
+    onCarChange: 'onCarChange',
+    onBookingServiceTypeChange: 'onBookingServiceTypeChange',
+    openCarModal: 'openCarModal',
+    saveCar: 'saveCar',
+    openCustomerModal: 'openCustomerModal',
+    saveCustomer: 'saveCustomer',
+    generateQuotation: 'generateQuotation',
+    resetQuotation: 'resetQuotation',
+    createBookingDraftFromQuotation: 'createBookingDraftFromQuotation',
+    exportQuotationCsv: 'exportQuotationCsv',
+    printQuotation: 'printQuotation',
+    syncQuotationDays: 'syncQuotationDays',
+    closeModal: '_closeModal',
+    exportBookingsCsv: 'exportBookingsCsv',
+    exportCustomersCsv: 'exportCustomersCsv',
+    sortBookings: 'sortBookings',
+  };
 
-  function openBookingModal(id)      { c().openBookingModal(id); }
-  function saveBooking()             { c().saveBooking(); }
-  function calcBooking()             { c().calcBooking(); }
-  function autofillCustomer()        { c().autofillCustomer(); }
-  function onCarChange()             { c().onCarChange(); }
-  function onBookingServiceTypeChange() { c().onBookingServiceTypeChange(); }
+  Object.entries(SHIM_METHOD_MAP).forEach(([globalName, controllerMethod]) => {
+    window[globalName] = (...args) => c()[controllerMethod](...args);
+  });
 
-  function openCarModal(id)          { c().openCarModal(id); }
-  function saveCar()                 { c().saveCar(); }
-
-  function openCustomerModal(id)     { c().openCustomerModal(id); }
-  function saveCustomer()            { c().saveCustomer(); }
-  function generateQuotation()       { c().generateQuotation(); }
-  function resetQuotation()          { c().resetQuotation(); }
-  function createBookingDraftFromQuotation() { c().createBookingDraftFromQuotation(); }
-  function exportQuotationCsv()      { c().exportQuotationCsv(); }
-  function printQuotation()          { c().printQuotation(); }
-  function syncQuotationDays()       { c().syncQuotationDays(); }
-
-  function closeModal(id)            { c()._closeModal(id); }
-  function exportBookingsCsv()       { c().exportBookingsCsv(); }
-  function exportCustomersCsv()      { c().exportCustomersCsv(); }
-  function sortBookings(field)       { c().sortBookings(field); }
+  // Inject the shared menu-toggle button into every topbar-left via the <template>
+  const _menuToggleTpl = document.getElementById('menu-toggle-tpl');
+  document.querySelectorAll('.topbar-left').forEach(div => {
+    div.insertBefore(_menuToggleTpl.content.cloneNode(true), div.firstChild);
+  });
 
   // ── Auth shims ───────────────────────────────────────────────────────────
   let _loginIsSignUp = false;
@@ -903,32 +907,38 @@ textarea{resize:vertical;min-height:70px}
   function toggleSignUp(e) {
     e.preventDefault();
     _loginIsSignUp = !_loginIsSignUp;
-    document.getElementById('login-mode-title').textContent = _loginIsSignUp ? 'Create your account' : 'Sign in to continue';
-    document.getElementById('login-submit-btn').textContent  = _loginIsSignUp ? 'Create Account' : 'Sign In';
-    document.getElementById('login-error').textContent = '';
-    document.querySelector('[onclick="toggleSignUp(event)"]').textContent = _loginIsSignUp ? 'Back to Sign In' : 'Create account';
+    getEl('login-mode-title').textContent = _loginIsSignUp ? 'Create your account' : 'Sign in to continue';
+    getEl('login-submit-btn').textContent = _loginIsSignUp ? 'Create Account' : 'Sign In';
+    getEl('login-error').textContent = '';
+    getEl('login-toggle-link').textContent = _loginIsSignUp ? 'Back to Sign In' : 'Create account';
   }
 
   async function submitLogin() {
-    const btn   = document.getElementById('login-submit-btn');
-    const errEl = document.getElementById('login-error');
-    const email = document.getElementById('login-email').value.trim();
-    const pass  = document.getElementById('login-password').value;
+    const btn = getEl('login-submit-btn');
+    const errEl = getEl('login-error');
+    const email = getEl('login-email').value.trim();
+    const pass = getEl('login-password').value;
     btn.disabled = true;
     errEl.textContent = '';
 
-    const result = _loginIsSignUp
-      ? await window._auth.signUp(email, pass)
-      : await window._auth.login(email, pass);
+    try {
+      const result = _loginIsSignUp
+        ? await window._auth.signUp(email, pass)
+        : await window._auth.login(email, pass);
 
-    if (result.ok) {
-      const overlay = document.getElementById('login-overlay');
-      overlay.classList.add('hidden');
-      setTimeout(() => { overlay.style.display = 'none'; }, 320);
-      await window._bootApp();
-    } else {
+      if (result.ok) {
+        const overlay = getEl('login-overlay');
+        overlay.classList.add('hidden');
+        setTimeout(() => { overlay.style.display = 'none'; }, 320);
+        await window._bootApp();
+        return;
+      }
+
       errEl.textContent = result.message;
-      document.getElementById('login-password').value = '';
+      getEl('login-password').value = '';
+    } catch (err) {
+      errEl.textContent = err?.message || 'Login failed. Please try again.';
+    } finally {
       btn.disabled = false;
     }
   }
@@ -940,22 +950,22 @@ textarea{resize:vertical;min-height:70px}
   }
 
   function openChangePassword() {
-    document.getElementById('cp-password').value = '';
-    document.getElementById('cp-confirm').value  = '';
-    document.getElementById('cp-error').textContent = '';
-    document.getElementById('modal-change-password').classList.add('open');
+    getEl('cp-password').value = '';
+    getEl('cp-confirm').value = '';
+    getEl('cp-error').textContent = '';
+    getEl('modal-change-password').classList.add('open');
   }
 
   async function saveCredentials() {
-    const password = document.getElementById('cp-password').value;
-    const confirm  = document.getElementById('cp-confirm').value;
-    const errEl    = document.getElementById('cp-error');
+    const password = getEl('cp-password').value;
+    const confirm = getEl('cp-confirm').value;
+    const errEl = getEl('cp-error');
     errEl.textContent = '';
     if (password !== confirm)   { errEl.textContent = 'Passwords do not match.'; return; }
     if (password.length < 6)    { errEl.textContent = 'Password must be at least 6 characters.'; return; }
     const result = await window._auth.changePassword(password);
     if (result.ok) {
-      document.getElementById('modal-change-password').classList.remove('open');
+      getEl('modal-change-password').classList.remove('open');
       alert('Password updated successfully.');
     } else {
       errEl.textContent = result.message;
@@ -969,10 +979,17 @@ textarea{resize:vertical;min-height:70px}
     });
   });
 
+  // ── Fleet card details toggle ─────────────────────────────────────────────
+  function toggleFleetDetails(id, btn) {
+    const panel = getEl(`fleet-details-${id}`);
+    const isOpen = panel.classList.toggle('open');
+    btn.textContent = isOpen ? 'Hide Details ▴' : 'View Details ▾';
+  }
+
   // ── Mobile sidebar toggle ────────────────────────────────────────────────
   function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('open');
+    getEl('sidebar').classList.toggle('open');
+    getEl('sidebar-overlay').classList.toggle('open');
   }
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────

@@ -623,7 +623,7 @@ export class AppController {
       insExpiry:   document.getElementById('c-ins-expiry').value,
       inspection:  document.getElementById('c-inspection').value,
       notes:       document.getElementById('c-notes').value,
-      photo:       await this._readFileMeta('c-photo-upload'),
+      photo:       await this._readFleetPhoto('c-photo-upload'),
     };
   }
 
@@ -688,5 +688,66 @@ export class AppController {
       reader.onerror = () => reject(new Error('Failed to read uploaded file.'));
       reader.readAsDataURL(file);
     });
+  }
+
+  /**
+   * Reads a fleet photo file, resizes it to TARGET_W × TARGET_H via canvas
+   * using cover-crop (same behaviour as CSS object-fit:cover), then returns
+   * the same metadata shape as _readFileMeta so the rest of the pipeline is
+   * unaffected.
+   */
+  async _readFleetPhoto(inputId) {
+    const file = document.getElementById(inputId)?.files?.[0];
+    if (!file) return null;
+
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      throw new Error(`"${file.name}" is too large. Fleet photos must be 10 MB or smaller.`);
+    }
+
+    const TARGET_W = 800;
+    const TARGET_H = 400;
+    const QUALITY  = 0.85;
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not load image for resizing.'));
+      img.onload = () => {
+        // Cover-crop: scale so the image fills TARGET_W × TARGET_H, then centre.
+        const srcRatio  = img.naturalWidth  / img.naturalHeight;
+        const destRatio = TARGET_W / TARGET_H;
+        let sw, sh, sx, sy;
+
+        if (srcRatio > destRatio) {
+          // Image is wider than target — crop sides
+          sh = img.naturalHeight;
+          sw = Math.round(sh * destRatio);
+          sx = Math.round((img.naturalWidth - sw) / 2);
+          sy = 0;
+        } else {
+          // Image is taller than target — crop top/bottom
+          sw = img.naturalWidth;
+          sh = Math.round(sw / destRatio);
+          sx = 0;
+          sy = Math.round((img.naturalHeight - sh) / 2);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = TARGET_W;
+        canvas.height = TARGET_H;
+        canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, TARGET_W, TARGET_H);
+        resolve(canvas.toDataURL('image/jpeg', QUALITY));
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    return {
+      name:       file.name,
+      type:       'image/jpeg',
+      size:       Math.round(dataUrl.length * 0.75), // approximate decoded bytes
+      uploadedAt: new Date().toISOString(),
+      dataUrl,
+    };
   }
 }
