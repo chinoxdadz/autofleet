@@ -1,0 +1,13 @@
+{
+  "buildCommand": "echo 'No build needed'",
+  "installCommand": "echo 'No dependencies'",
+  "outputDirectory": ".",
+  "framework": "vanilla",
+  "regions": ["sfo1"],
+  "functions": {
+    "api/**/*.js": {
+      "memory": 128,
+      "maxDuration": 60
+    }
+  }
+}
