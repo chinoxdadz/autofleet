@@ -81,7 +81,7 @@ export class AppController {
     const bookings = ReportingService.forMonth(this.state.bookings, y, m);
     this._dashR.render(
       document.getElementById('dashboard-content'),
-      { bookings, recentBookings: this.bookingUC.getRecentBookings(), cars: this.state.cars, customers: this.state.customers, month: m, year: y }
+      { bookings, recentBookings: this.bookingUC.getRecentBookings(), allBookings: this.state.bookings, cars: this.state.cars, customers: this.state.customers, month: m, year: y }
     );
   }
 
