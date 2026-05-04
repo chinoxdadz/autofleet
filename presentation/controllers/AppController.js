@@ -551,7 +551,14 @@ export class AppController {
 
   _showToast(msg, err = false) {
     const t = document.getElementById('toast');
-    t.innerHTML = `<span class="toast-icon">${err ? '✕' : '✓'}</span><span>${msg}</span>`;
+    // Use textContent for the message to prevent XSS via error strings
+    t.innerHTML = '';
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.textContent = err ? '✕' : '✓';
+    const text = document.createElement('span');
+    text.textContent = msg;
+    t.append(icon, text);
     t.className   = 'toast' + (err ? ' error' : '') + ' show';
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);

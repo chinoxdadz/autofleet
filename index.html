@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- CSP fallback for local file:// usage (headers only apply on Vercel) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">
 <title>AutoFleet — Car Rental Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -315,7 +318,7 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div class="login-field">
       <label for="login-password">Password</label>
-      <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="8" />
     </div>
     <div class="login-error" id="login-error"></div>
     <button class="login-btn" id="login-submit-btn" onclick="submitLogin()">Sign In</button>
@@ -335,7 +338,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="modal-body">
       <div class="field-group">
         <label class="field-label">New Password</label>
-        <input class="field-input" type="password" id="cp-password" placeholder="Min. 6 characters" />
+        <input class="field-input" type="password" id="cp-password" placeholder="Min. 8 characters" minlength="8" />
       </div>
       <div class="field-group">
         <label class="field-label">Confirm New Password</label>
@@ -921,6 +924,18 @@ textarea{resize:vertical;min-height:70px}
     btn.disabled = true;
     errEl.textContent = '';
 
+    // Client-side validation
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      btn.disabled = false;
+      return;
+    }
+    if (_loginIsSignUp && pass.length < 8) {
+      errEl.textContent = 'Password must be at least 8 characters.';
+      btn.disabled = false;
+      return;
+    };
+
     try {
       const result = _loginIsSignUp
         ? await window._auth.signUp(email, pass)
@@ -961,8 +976,8 @@ textarea{resize:vertical;min-height:70px}
     const confirm = getEl('cp-confirm').value;
     const errEl = getEl('cp-error');
     errEl.textContent = '';
-    if (password !== confirm)   { errEl.textContent = 'Passwords do not match.'; return; }
-    if (password.length < 6)    { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+    if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+    if (password.length < 8)    { errEl.textContent = 'Password must be at least 8 characters.'; return; }
     const result = await window._auth.changePassword(password);
     if (result.ok) {
       getEl('modal-change-password').classList.remove('open');

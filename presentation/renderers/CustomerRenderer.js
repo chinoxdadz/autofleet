@@ -19,7 +19,14 @@ function tier(totalBookings, totalSpent) {
 
 function docLink(doc, label) {
   if (!doc?.dataUrl) return '<span style="color:var(--muted)">Missing</span>';
-  return `<a href="${doc.dataUrl}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${label}</a>`;
+  // Only allow data: URLs (base64 files); block javascript: and other schemes
+  if (!doc.dataUrl.startsWith('data:')) return '<span style="color:var(--muted)">Invalid</span>';
+  return `<a href="${escHtml(doc.dataUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:none">${escHtml(label)}</a>`;
+}
+
+/** Sanitize a phone number to a safe tel: href (digits, +, spaces, dashes only) */
+function safeTelHref(phone) {
+  return /^[0-9+\-\s()]+$/.test(phone) ? `tel:${phone}` : null;
 }
 
 export class CustomerRenderer {
@@ -90,9 +97,12 @@ export class CustomerRenderer {
               <span class="badge ${t.cls}" style="font-size:9px;padding:2px 6px">${t.label}</span>
               ${isActive ? `<span class="badge badge-green" style="font-size:9px;padding:2px 6px">Active</span>` : ''}
             </div>
-            <div class="cust-phone">${c.phone
-              ? `<a href="tel:${escHtml(c.phone)}" style="color:var(--blue);text-decoration:none">${escHtml(c.phone)}</a>`
-              : '—'}</div>
+            <div class="cust-phone">${(() => {
+              const href = c.phone ? safeTelHref(c.phone) : null;
+              return href
+                ? `<a href="${escHtml(href)}" style="color:var(--blue);text-decoration:none">${escHtml(c.phone)}</a>`
+                : escHtml(c.phone || '—');
+            })()}</div>
           </div>
         </div>
         <div class="cust-row"><span>Driver's License</span><span class="cust-val" style="font-family:monospace;font-size:12px">${escHtml(c.license || '—')}</span></div>
