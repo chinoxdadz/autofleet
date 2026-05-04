@@ -23,7 +23,7 @@ function carToRow(c) {
     ins_expiry:   c.insExpiry    || '',
     inspection:   c.inspection   || '',
     notes:        c.notes        || '',
-    photo:        c.photo        || null,
+    photo:        c.photo ? JSON.stringify(c.photo) : null,
   };
 }
 
@@ -40,7 +40,7 @@ function rowToCar(row) {
     insExpiry:   row.ins_expiry,
     inspection:  row.inspection,
     notes:       row.notes,
-    photo:       row.photo,
+    photo:        row.photo ? (() => { try { return JSON.parse(row.photo); } catch { return null; } })() : null,
   };
 }
 
